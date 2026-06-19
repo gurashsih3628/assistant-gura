@@ -1,67 +1,116 @@
 import streamlit as st
 from groq import Groq
-from dotenv import load_dotenv
-import os
 
-# Load environment variables
-load_dotenv()
-
-# Get API key
-api_key = os.getenv("GROQ_API_KEY")
-
-# Check API key
-if not api_key:
-    st.error("GROQ_API_KEY not found in .env file")
-    st.stop()
-
-# Create Groq client
-client = Groq(api_key=api_key)
-
-# Page setup
+# -------------------------
+# PAGE CONFIG
+# -------------------------
 st.set_page_config(
     page_title="Gura Assistant",
     page_icon="🤖",
     layout="centered"
 )
 
+# -------------------------
+# API KEY
+# -------------------------
+try:
+    api_key = st.secrets["GROQ_API_KEY"]
+except Exception:
+    st.error("GROQ_API_KEY not found in Streamlit Secrets.")
+    st.stop()
+
+client = Groq(api_key=api_key)
+
+# -------------------------
+# TITLE
+# -------------------------
 st.title("🤖 Gura Assistant")
-st.write("Gura is alive and running!")
+st.caption("Powered by Llama 3.3 70B on Groq")
 
-# Chat history
+# -------------------------
+# MEMORY
+# -------------------------
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are Gura, a personal AI assistant. "
+                "You help with coding, studies, finance, "
+                "productivity, and everyday questions. "
+                "Be concise, accurate, and helpful. "
+                "Do not invent details about your own model."
+            )
+        }
+    ]
 
-# Display previous messages
+# -------------------------
+# DISPLAY CHAT
+# -------------------------
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
+    if message["role"] != "system":
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-# User input
+# -------------------------
+# USER INPUT
+# -------------------------
 prompt = st.chat_input("Talk to Gura...")
 
 if prompt:
-    # Show user message
+
     st.session_state.messages.append(
-        {"role": "user", "content": prompt}
+        {
+            "role": "user",
+            "content": prompt
+        }
     )
 
     with st.chat_message("user"):
-        st.write(prompt)
+        st.markdown(prompt)
 
     try:
+
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=st.session_state.messages
+            messages=st.session_state.messages,
+            temperature=0.7,
+            max_tokens=1024
         )
 
         reply = response.choices[0].message.content
 
         st.session_state.messages.append(
-            {"role": "assistant", "content": reply}
+            {
+                "role": "assistant",
+                "content": reply
+            }
         )
 
         with st.chat_message("assistant"):
-            st.write(reply)
+            st.markdown(reply)
 
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error: {str(e)}")
+
+# -------------------------
+# SIDEBAR
+# -------------------------
+with st.sidebar:
+
+    st.header("Gura Controls")
+
+    if st.button("🗑️ Clear Chat"):
+        st.session_state.messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are Gura, a personal AI assistant. "
+                    "You help with coding, studies, finance, "
+                    "productivity, and everyday questions."
+                )
+            }
+        ]
+        st.rerun()
+
+    st.info("Model: Llama 3.3 70B Versatile")
