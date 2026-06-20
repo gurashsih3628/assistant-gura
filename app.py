@@ -1,5 +1,6 @@
 import streamlit as st
 from groq import Groq
+import hashlib
 
 # -------------------------
 # PAGE CONFIG
@@ -20,20 +21,29 @@ if not st.session_state.authenticated:
 
     st.markdown(
         """
-        <h1 style='text-align:center;'>🔒 Gura Assistant</h1>
-        <h3 style='text-align:center;'>Private Access Required</h3>
+        <div style='text-align:center;padding-top:60px;'>
+            <h1>🔒 Gura Assistant</h1>
+            <p>Private Access Required</p>
+        </div>
         """,
         unsafe_allow_html=True
     )
 
     password = st.text_input(
-        "Enter Password",
+        "Password",
         type="password"
     )
 
-    if st.button("Login", use_container_width=True):
+    if st.button(
+        "Login",
+        use_container_width=True
+    ):
 
-        if password == st.secrets["PASSWORD"]:
+        entered_hash = hashlib.sha256(
+            password.encode()
+        ).hexdigest()
+
+        if entered_hash == st.secrets["HASH"]:
             st.session_state.authenticated = True
             st.rerun()
         else:
@@ -56,7 +66,7 @@ client = Groq(api_key=api_key)
 # TITLE
 # -------------------------
 st.title("🤖 Gura Assistant")
-st.caption("Powered by Llama 3.3 70B on Groq")
+st.caption("Powered by Llama 3.3 70B Versatile")
 
 # -------------------------
 # MEMORY
@@ -69,8 +79,7 @@ if "messages" not in st.session_state:
                 "You are Gura, a personal AI assistant. "
                 "You help with coding, studies, finance, "
                 "productivity, and everyday questions. "
-                "Be concise, accurate, and helpful. "
-                "Do not invent details about your own model."
+                "Be concise, accurate, and helpful."
             )
         }
     ]
@@ -132,6 +141,7 @@ with st.sidebar:
     st.header("Gura Controls")
 
     if st.button("🗑️ Clear Chat"):
+
         st.session_state.messages = [
             {
                 "role": "system",
@@ -142,6 +152,7 @@ with st.sidebar:
                 )
             }
         ]
+
         st.rerun()
 
     if st.button("🚪 Logout"):
