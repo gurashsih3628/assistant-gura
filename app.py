@@ -1,6 +1,5 @@
 import streamlit as st
 from groq import Groq
-import hashlib
 
 # -------------------------
 # PAGE CONFIG
@@ -12,7 +11,30 @@ st.set_page_config(
 )
 
 # -------------------------
-# PASSWORD PROTECTION
+# CUSTOM CSS
+# -------------------------
+st.markdown("""
+<style>
+.stApp {
+    background-color: #0e1117;
+}
+
+.main-title {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+.login-box {
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid #333;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# -------------------------
+# LOGIN SYSTEM
 # -------------------------
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -20,30 +42,20 @@ if "authenticated" not in st.session_state:
 if not st.session_state.authenticated:
 
     st.markdown(
-        """
-        <div style='text-align:center;padding-top:60px;'>
-            <h1>🔒 Gura Assistant</h1>
-            <p>Private Access Required</p>
-        </div>
-        """,
+        "<div class='main-title'>🔒 Gura Assistant</div>",
         unsafe_allow_html=True
     )
+
+    st.markdown("### Private Access Required")
 
     password = st.text_input(
         "Password",
         type="password"
     )
 
-    if st.button(
-        "Login",
-        use_container_width=True
-    ):
+    if st.button("Login", use_container_width=True):
 
-        entered_hash = hashlib.sha256(
-            password.encode()
-        ).hexdigest()
-
-        if entered_hash == st.secrets["HASH"]:
+        if password == st.secrets["PASSWORD"]:
             st.session_state.authenticated = True
             st.rerun()
         else:
@@ -52,7 +64,7 @@ if not st.session_state.authenticated:
     st.stop()
 
 # -------------------------
-# API KEY
+# LOAD API KEY
 # -------------------------
 try:
     api_key = st.secrets["GROQ_API_KEY"]
@@ -63,13 +75,13 @@ except Exception:
 client = Groq(api_key=api_key)
 
 # -------------------------
-# TITLE
+# HEADER
 # -------------------------
 st.title("🤖 Gura Assistant")
 st.caption("Powered by Llama 3.3 70B Versatile")
 
 # -------------------------
-# MEMORY
+# CHAT MEMORY
 # -------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -88,12 +100,14 @@ if "messages" not in st.session_state:
 # DISPLAY CHAT
 # -------------------------
 for message in st.session_state.messages:
+
     if message["role"] != "system":
+
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
 # -------------------------
-# USER INPUT
+# CHAT INPUT
 # -------------------------
 prompt = st.chat_input("Talk to Gura...")
 
@@ -138,7 +152,7 @@ if prompt:
 # -------------------------
 with st.sidebar:
 
-    st.header("Gura Controls")
+    st.header("⚙️ Gura Controls")
 
     if st.button("🗑️ Clear Chat"):
 
@@ -156,6 +170,7 @@ with st.sidebar:
         st.rerun()
 
     if st.button("🚪 Logout"):
+
         st.session_state.authenticated = False
         st.rerun()
 
