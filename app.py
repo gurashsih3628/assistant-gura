@@ -11,6 +11,37 @@ st.set_page_config(
 )
 
 # -------------------------
+# PASSWORD PROTECTION
+# -------------------------
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+
+    st.markdown(
+        """
+        <h1 style='text-align:center;'>🔒 Gura Assistant</h1>
+        <h3 style='text-align:center;'>Private Access Required</h3>
+        """,
+        unsafe_allow_html=True
+    )
+
+    password = st.text_input(
+        "Enter Password",
+        type="password"
+    )
+
+    if st.button("Login", use_container_width=True):
+
+        if password == st.secrets["PASSWORD"]:
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("Incorrect Password")
+
+    st.stop()
+
+# -------------------------
 # API KEY
 # -------------------------
 try:
@@ -111,6 +142,10 @@ with st.sidebar:
                 )
             }
         ]
+        st.rerun()
+
+    if st.button("🚪 Logout"):
+        st.session_state.authenticated = False
         st.rerun()
 
     st.info("Model: Llama 3.3 70B Versatile")
