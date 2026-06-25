@@ -99,17 +99,19 @@ def login():
             .login-container {{
                 background-color: white;
                 padding: 40px 30px;
-                border-radius: 10px;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
                 text-align: center;
                 width: 100%;
-                max-width: 350px;
+                max-width: 360px;
             }}
             .login-container h2 {{
                 margin-top: 0;
                 color: #2c3e50;
-                font-size: 24px;
+                font-size: 26px;
                 margin-bottom: 25px;
+                font-weight: 700;
+                letter-spacing: -0.5px;
             }}
             .input-group {{
                 margin-bottom: 20px;
@@ -120,13 +122,14 @@ def login():
                 margin: 8px 0;
                 display: inline-block;
                 border: 1px solid #dce1e6;
-                border-radius: 6px;
+                border-radius: 8px;
                 box-sizing: border-box;
                 font-size: 16px;
-                transition: border-color 0.3s;
+                transition: border-color 0.3s, box-shadow 0.3s;
             }}
             input[type="password"]:focus {{
                 border-color: #3498db;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
                 outline: none;
             }}
             button {{
@@ -134,33 +137,38 @@ def login():
                 color: white;
                 padding: 12px 20px;
                 border: none;
-                border-radius: 6px;
+                border-radius: 8px;
                 cursor: pointer;
                 width: 100%;
                 font-size: 16px;
                 font-weight: 600;
-                transition: background-color 0.3s;
+                transition: background-color 0.2s, transform 0.1s;
             }}
             button:hover {{
                 background-color: #2980b9;
             }}
+            button:active {{
+                transform: scale(0.98);
+            }}
             .error-message {{
                 color: #e74c3c;
                 font-size: 14px;
-                margin-bottom: 15px;
+                margin-bottom: 20px;
                 background-color: #fadbd8;
-                padding: 10px;
-                border-radius: 5px;
+                padding: 12px;
+                border-radius: 6px;
+                border-left: 4px solid #e74c3c;
+                text-align: left;
             }}
         </style>
     </head>
     <body>
         <div class="login-container">
-            <h2>Welcome to Gura</h2>
-            {'<div class="error-message">' + error + '</div>' if error else ''}
+            <h2>Gura Assistant</h2>
+            {f'<div class="error-message">{error}</div>' if error else ''}
             <form method="POST">
                 <div class="input-group">
-                    <input type="password" name="password" placeholder="Enter your password" required>
+                    <input type="password" name="password" placeholder="Enter security password" required>
                 </div>
                 <button type="submit">Access Assistant</button>
             </form>
@@ -453,4 +461,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=5000,
         debug=True
-    )s
+    )
