@@ -1,12 +1,15 @@
-import sqlite3
-
-DB_NAME = "gura.db"
+import os
+import psycopg2
 
 # -------------------------
 # CONNECTION
 # -------------------------
 def get_connection():
-    return sqlite3.connect(DB_NAME)
+    db_url = os.environ.get("DATABASE_URL")
+    if not db_url:
+        raise ValueError("DATABASE_URL environment variable is not set. Please add it to your Render environment variables.")
+    # Connect to PostgreSQL (sslmode='require' is often needed for cloud DBs like Render)
+    return psycopg2.connect(db_url, sslmode='require')
 
 # -------------------------
 # INIT DATABASE
@@ -15,10 +18,10 @@ def init_db():
     conn = get_connection()
     cur = conn.cursor()
 
-    # MEMORIES
+    # MEMORIES (Changed AUTOINCREMENT to SERIAL for PostgreSQL)
     cur.execute("""
     CREATE TABLE IF NOT EXISTS memories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         key TEXT NOT NULL,
         value TEXT NOT NULL,
         category TEXT DEFAULT 'general',
@@ -29,7 +32,7 @@ def init_db():
     # CHAT HISTORY
     cur.execute("""
     CREATE TABLE IF NOT EXISTS chat_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         role TEXT NOT NULL,
         message TEXT NOT NULL,
         session_id TEXT,
@@ -40,7 +43,7 @@ def init_db():
     # FD TABLE
     cur.execute("""
     CREATE TABLE IF NOT EXISTS fds (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         owner TEXT NOT NULL,
         bank TEXT NOT NULL,
         amount REAL NOT NULL,
@@ -65,11 +68,12 @@ def save_memory(key, value, category="general"):
     conn = get_connection()
     cur = conn.cursor()
 
+    # PostgreSQL uses %s instead of ? for parameterized queries
     cur.execute(
         """
         INSERT INTO memories
         (key, value, category)
-        VALUES (?, ?, ?)
+        VALUES (%s, %s, %s)
         """,
         (key, value, category)
     )
@@ -86,7 +90,7 @@ def get_memories(limit=20):
         SELECT key, value, category, created_at
         FROM memories
         ORDER BY id DESC
-        LIMIT ?
+        LIMIT %s
         """,
         (limit,)
     )
@@ -108,7 +112,7 @@ def save_chat(role, message, session_id="default"):
         """
         INSERT INTO chat_history
         (role, message, session_id)
-        VALUES (?, ?, ?)
+        VALUES (%s, %s, %s)
         """,
         (role, message, session_id)
     )
@@ -124,9 +128,9 @@ def get_chat_history(session_id="default", limit=20):
         """
         SELECT role, message, created_at
         FROM chat_history
-        WHERE session_id = ?
+        WHERE session_id = %s
         ORDER BY id DESC
-        LIMIT ?
+        LIMIT %s
         """,
         (session_id, limit)
     )
@@ -164,7 +168,7 @@ def save_fd(
             maturity_date,
             reminder_days
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """,
         (
             owner,
@@ -220,7 +224,7 @@ def get_fds_by_owner(owner):
             start_date,
             maturity_date
         FROM fds
-        WHERE owner = ?
+        WHERE owner = %s
         AND status = 'active'
         ORDER BY maturity_date ASC
         """,
@@ -241,7 +245,7 @@ def close_fd(fd_id):
         """
         UPDATE fds
         SET status = 'closed'
-        WHERE id = ?
+        WHERE id = %s
         """,
         (fd_id,)
     )
@@ -256,7 +260,7 @@ def delete_fd(fd_id):
     cur.execute(
         """
         DELETE FROM fds
-        WHERE id = ?
+        WHERE id = %s
         """,
         (fd_id,)
     )
@@ -268,6 +272,7 @@ def delete_fd(fd_id):
 # DEBUG TEST
 # -------------------------
 if __name__ == "__main__":
+    # Will fail locally if you don't have DATABASE_URL set in your .env
     init_db()
 
     print("ACTIVE FDS:")
